@@ -1,0 +1,25 @@
+name: WoolfPostalService
+description: Provides functionality to set up an in-game postal service
+main: com.asharpminer.wps.WoolfPostalService
+version: 1.21
+prefix: "wps"
+api-version: 1.21
+# softdepend: [ManHunt]
+
+commands:
+  wpsbox:
+    description: Sets a mailbox block to monitor
+    usage: /wpsbox 
+    permission: wps.mailman
+
+
+permissions:
+  wps.basic:
+    description: not currently used
+    default: true
+  wps.wpsbox:
+    description: Gives access to mailman controls
+    default: op
+
+database: false
+author: Jeffrey C. Hoyt

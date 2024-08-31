@@ -7,8 +7,8 @@ import java.util.logging.Logger;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -34,19 +34,17 @@ public class PlacementListener implements Listener {
 
         // make sure it's a shulker
         Block box = event.getBlock();
-        logger.warning(box.getBlockData().getMaterial().name() + " placed");
         if(!box.getBlockData().getMaterial().name().contains(Material.SHULKER_BOX.name())) return;
+
+        // bail if the location is not a mailbox 
+        if(!plugin.isMailbox(box)) return;
 
         Location pickup = box.getLocation();
         Player customer = event.getPlayer();
         
-        plugin.asyncBroadcast(customer.getName() + " placed a package for pickup at " + pickup.getX() + " " 
-            + pickup.getY() + " " +pickup.getZ() + " in " + pickup.getWorld().getName(), 5L);
+        plugin.asyncBroadcast(customer.getName() + " placed a package for pickup at " + pickup.getBlockX() + " " 
+            + pickup.getBlockY() + " " +pickup.getBlockZ() + " in " + pickup.getWorld().getName(), 5L);
         
         
-        // if(Math.random(  ) > 0.02 || event.getBedEnterResult​().equals(PlayerBedEnterEvent.BedEnterResult.valueOf("OK"))) return;
-        // String who = event.getPlayer().getName();
-        // logger.fine( who + " has slept");
-        // plugin.asyncBroadcast(ChatColor.DARK_AQUA + "Goodnight dear " + who + "! May you dream wonderful dreams.", 20L);
     }
 }

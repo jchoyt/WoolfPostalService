@@ -9,7 +9,7 @@ api-version: 1.21
 commands:
   wpsbox:
     description: Sets a mailbox block to monitor
-    usage: /wpsbox 
+    usage: /wpsbox <nickname>
     permission: wps.mailman
 
 
@@ -17,9 +17,9 @@ permissions:
   wps.basic:
     description: not currently used
     default: true
-  wps.wpsbox:
+  wps.mailman:
     description: Gives access to mailman controls
-    default: op
+    default: false
 
 database: false
 author: Jeffrey C. Hoyt

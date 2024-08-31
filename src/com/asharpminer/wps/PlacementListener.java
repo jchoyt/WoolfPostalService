@@ -42,9 +42,22 @@ public class PlacementListener implements Listener {
         Location pickup = box.getLocation();
         Player customer = event.getPlayer();
         
-        plugin.asyncBroadcast(customer.getName() + " placed a package for pickup at " + pickup.getBlockX() + " " 
-            + pickup.getBlockY() + " " +pickup.getBlockZ() + " in " + pickup.getWorld().getName(), 5L);
-        
-        
+        // TODO - add Discord messages here
+        String nickname = plugin.getNickname(box);
+        String message;
+        if(null == nickname) {
+            message = customer.getName() + " placed a package for pickup at " + pickup.getBlockX() + " " 
+            + pickup.getBlockY() + " " +pickup.getBlockZ() + " in " + pickup.getWorld().getName();
+        } else {
+            message = customer.getName() + " placed a package for pickup at " + nickname + " (" + pickup.getBlockX() + " " 
+            + pickup.getBlockY() + " " +pickup.getBlockZ() + " in " + pickup.getWorld().getName() + ")";
+        }
+
+        plugin.asyncBroadcast(message, 5L);
+
+
+        // notify customer 
+        customer.sendMessage("WPS has been notified of your request and someone will be by shortly to pick up your package.");
+          
     }
 }

@@ -65,6 +65,11 @@ public final class WoolfPostalService extends JavaPlugin {
         mailboxes.remove(block);
     }
 
+    public String getNickname(Block mailbox) {
+        // returns null if there is no nickname
+        return mailboxes.get(mailbox);
+    }
+
     private void readMailboxes() {
         FileConfiguration config = new YamlConfiguration();
         try {

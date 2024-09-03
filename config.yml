@@ -1,33 +1,11 @@
-#       :)                                               #
-#                                                        #
-#                        Man Hunt                        #
-#                                        :)              #
-#                                                        #
 
-preferences:
-  # Colour of names in the chat (0-9 & a-f)
-  chathighlight: d
-round:
-  # Minimum players online to start a round
-  minplayers: 4
+discord:
+  # See https://javacord.org/wiki/getting-started/creating-a-bot-account.html
+  # For how to create a bot account on Discord and get your bot's token
+  token: XXXXXXXXX
+  server: 
+    ### name of your Discord server
+    name: 
+    channel: wps-delivery
 
-  # Seconds from round end to next round start
-  delay: 150
-
-  # Time before the target earns their survival prize
-  maxlength: 900
-
-  # Only survival players can play
-  survivalplayersonly: true
-
-prizes:
-  # % of prizes that will be enchanted items
-  enchrate: 10
-  # whether to include prizes from various realms in the prize pool
-  includeOverworld: true
-  includeNether: false
-  includeEnd: false
-
-dev:
-  # allow AFK players to receive prizes anyway
-  allowafk: false
+testing: true;

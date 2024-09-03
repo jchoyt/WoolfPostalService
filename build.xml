@@ -39,11 +39,12 @@
         <jar jarfile="${jarfile}" basedir="${build}" description="rebuild the jarfile">
             <fileset file="config.yml"/>
             <fileset file="plugin.yml"/>
+            <!-- include all of javacord ... TODO make a smarter version of this -->
+            <zipgroupfileset file="lib/JDA-5.1.0-withDependencies-min.jar"/>
             <manifest>
                 <attribute name="Built-By" value="${user.name}"/>
                 <!-- <attribute name="Main-Class" value="nexusbot.NexusBot"/> -->
                 <attribute name="Built-Date" value="${DSTAMP}, ${TSTAMP}"/>
-                <!-- <attribute name="Class-Path" value="lib/pircbot.jar lib/postgresql-8.3-603.jdbc3.jar"/> -->
             </manifest>
         </jar>
      </target>

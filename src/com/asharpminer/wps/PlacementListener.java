@@ -42,7 +42,7 @@ public class PlacementListener implements Listener {
         Location pickup = box.getLocation();
         Player customer = event.getPlayer();
         
-        // TODO - add Discord messages here
+        // notify WPS staff
         String nickname = plugin.getNickname(box);
         String message;
         if(null == nickname) {
@@ -53,7 +53,8 @@ public class PlacementListener implements Listener {
             + pickup.getBlockY() + " " +pickup.getBlockZ() + " in " + pickup.getWorld().getName() + ")";
         }
 
-        plugin.asyncBroadcast(message, 5L);
+        logger.info(message);
+        plugin.notifyMailChannel(message);
 
 
         // notify customer 

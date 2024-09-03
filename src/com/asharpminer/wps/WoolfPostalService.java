@@ -7,11 +7,11 @@ package com.asharpminer.wps;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.List;
-import java.util.ArrayList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,15 +23,25 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+
+
 public final class WoolfPostalService extends JavaPlugin {
 
-    private Logger log = null;
+    private Logger logger = null;
     private Map<Block, String> mailboxes = new HashMap<Block, String>();
     private File configFile = new File(getDataFolder(), "mailboxes.yml");
     private final String delim = ":";
+    private GuildMessageChannel wpsChannel = null;
+    private JDA bot = null;
 
     public WoolfPostalService() {
-        log = getLogger();
+        logger = getLogger();
     }
 
     @Override
@@ -41,17 +51,55 @@ public final class WoolfPostalService extends JavaPlugin {
         // load up listeners and command executors
         new PlacementListener(this); // listens for package placements
         new MailboxCommandExecutor(this); 
+
+        // create bot from JDA framework and set up the wpsChannel
+        bot = JDABuilder.createLight(getConfig().getString("discord.token"))
+            .build();
+        try { 
+            bot.awaitReady();
+        } catch (InterruptedException e) {
+            logger.warning(e.getStackTrace().toString());
+        }
+
+        //get the server we are on
+        List <Guild> guildList = bot.getGuilds(); //ByName(getConfig().getString("discord.server.name"), false);
+        logger.fine("I belong to " + guildList.size() + " servers");
+        
+        if(guildList.size() == 0) {
+            logger.warning("Couldn't find a server the bot is part of with the name " + getConfig().getString("discord.server.name"));
+            //disable();
+            return;
+        }
+        Guild ourGuild = guildList.get(0);
+
+        // get the channel the bot is supposed to be on
+        List <GuildChannel> channelList = ourGuild.getChannels();
+        for(GuildChannel e : channelList) {
+            if(e.getName().equals(getConfig().getString("discord.server.channel"))) {
+                wpsChannel = (GuildMessageChannel) e;
+                logger.info("Connected to channel " + wpsChannel.getName());
+                break;
+            }
+        }
+
+        if(wpsChannel == null) {
+            logger.warning("Couldn't find the channel " + getConfig().getString("discord.server.channel") + " on the server " + getConfig().getString("discord.server.name"));
+            //disable();
+            return;
+        }
     }
 
     @Override
     public void onDisable() {
         // save config
         saveMailboxes();
+        // log out the bot
+        bot.shutdown();
     }
 
     public void setMailbox(String nickname, Block block) {
         mailboxes.put(block, nickname);
-        log.warning("Setting new mailbox at " + block.getLocation().toString() + " named " + nickname);
+        logger.warning("Setting new mailbox at " + block.getLocation().toString() + " named " + nickname);
         // set and save config
     }
 
@@ -70,14 +118,21 @@ public final class WoolfPostalService extends JavaPlugin {
         return mailboxes.get(mailbox);
     }
 
+    //send the message on Discord
+    public void notifyMailChannel(String msg) {
+        if(getConfig().getBoolean("testing")) msg = "Testing: " + msg;
+        wpsChannel.sendMessage(msg)
+            .queue();
+    }
+
     private void readMailboxes() {
         FileConfiguration config = new YamlConfiguration();
         try {
             config.load(configFile);
+            @SuppressWarnings("unchecked")
             List<String> boxes = (List<String>)config.get("mailboxes");
             for(String box : boxes) {
                 String[] bits = box.split(delim);
-                Block block;
                 World world = Bukkit.getServer().getWorld(bits[0]);
                 
                 Location loc = new Location(world, 
@@ -124,6 +179,9 @@ public final class WoolfPostalService extends JavaPlugin {
         }
     }
 
+    private void disable() {
+        getServer().getPluginManager().disablePlugin(this);
+    }
 
 
     /*

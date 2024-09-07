@@ -11,6 +11,10 @@ commands:
     description: Sets a mailbox block to monitor
     usage: /wpsbox <nickname>
     permission: wps.mailman
+  deletebox:
+    description: Removes a locaiton from the list of monitored blocks
+    usage: /deletebox
+    permission: wps.mailman
 
 
 permissions:

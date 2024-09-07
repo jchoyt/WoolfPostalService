@@ -50,6 +50,7 @@ public final class WoolfPostalService extends JavaPlugin {
         // load up listeners and command executors
         new PlacementListener(this); // listens for package placements
         new MailboxCommandExecutor(this); 
+        new DeleteMailboxCommandExecutor(this);
 
         // create bot from JDA framework and set up the wpsChannel
         bot = JDABuilder.createLight(getConfig().getString("discord.token"))
@@ -103,14 +104,20 @@ public final class WoolfPostalService extends JavaPlugin {
         saveMailboxes();
     }
 
+    /** 
+     * returns true if the location is removed or false if this wasn't a monitored location
+     */
+    public boolean deleteMailbox(Block block) {
+        if (null == mailboxes.remove(block)) {
+            return false;
+        }
+        saveMailboxes();
+        return true;
+    }
+
     public boolean isMailbox(Block block) {
         if(mailboxes.containsKey(block)) return true;
         return false;
-    }
-
-    public void deleteMailbox( Block block ) {
-        // remove mailbox and save config
-        mailboxes.remove(block);
     }
 
     public String getNickname(Block mailbox) {

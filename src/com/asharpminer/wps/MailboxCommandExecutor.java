@@ -35,7 +35,7 @@ public class MailboxCommandExecutor implements CommandExecutor {
             String nickname = args.length == 0 ? "nn" : args[0];
             Block block = player.getLocation().getBlock();
             plugin.setMailbox(nickname, block);
-            plugin.
+            player.sendMessage("WPS is monitoring this location");
             return true;
 
         } else {

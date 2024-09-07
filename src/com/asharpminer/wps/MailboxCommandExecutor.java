@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Jeffrey C. Hoyt. Released under the Aapache 2.0 license
+ * Copyright 2024 Jeffrey C. Hoyt. Released under the Aapache 2.0 license
  */
 
 package com.asharpminer.wps;
@@ -35,12 +35,7 @@ public class MailboxCommandExecutor implements CommandExecutor {
             String nickname = args.length == 0 ? "nn" : args[0];
             Block block = player.getLocation().getBlock();
             plugin.setMailbox(nickname, block);
-            // if(null == plugin.getMailbox(block))
-            // {
-            //     logger.info("New mailbox location is nicknamed " + nickname);
-            //     plugin.setMailbox(nickname, player.getLocation());
-            //     return true; 
-            // }
+            plugin.
             return true;
 
         } else {

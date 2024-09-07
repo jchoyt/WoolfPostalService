@@ -28,7 +28,6 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 
 
 public final class WoolfPostalService extends JavaPlugin {
@@ -101,6 +100,7 @@ public final class WoolfPostalService extends JavaPlugin {
         mailboxes.put(block, nickname);
         logger.warning("Setting new mailbox at " + block.getLocation().toString() + " named " + nickname);
         // set and save config
+        saveMailboxes();
     }
 
     public boolean isMailbox(Block block) {
@@ -120,9 +120,12 @@ public final class WoolfPostalService extends JavaPlugin {
 
     //send the message on Discord
     public void notifyMailChannel(String msg) {
-        if(getConfig().getBoolean("testing")) msg = "Testing: " + msg;
-        wpsChannel.sendMessage(msg)
-            .queue();
+        if(getConfig().getBoolean("testing")) {
+            logger.info("Redirected from discord: " + msg);
+        } else {           
+            wpsChannel.sendMessage(msg)
+                .queue();
+        }
     }
 
     private void readMailboxes() {

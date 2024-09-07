@@ -45,6 +45,11 @@ public class PlacementListener implements Listener {
 
         Location pickup = box.getLocation();
         Player customer = event.getPlayer();
+
+        if(customer.hasPermission("wps.mailman")) {
+            customer.sendMessage("Good job! Entomo's a lazy sod and hasn't done the rest of Issue 4 yet.");
+            return;
+        }
         
         // notify WPS staff
         String nickname = plugin.getNickname(box);

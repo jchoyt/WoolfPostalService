@@ -1,6 +1,9 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    // com.github.johnrengelman.shadow is archived/unmaintained and breaks under Gradle 9's
+    // internals; com.gradleup.shadow is its actively-maintained continuation (same task names,
+    // same "shadowJar" config API).
+    id 'com.gradleup.shadow' version '9.6.1'
 }
 
 group = 'com.asharpminer.wps'
@@ -56,9 +59,9 @@ tasks.named('test') {
 
 // Test-only dependencies (MockBukkit / paper-api) target newer bytecode than the plugin itself
 // (Minecraft's server jar requires Java 25+ as of this release); this bumps only the test source
-// set so the production jar keeps targeting Java 17. Gradle 8.10 itself can't run on JDK 25 (its
-// Groovy runtime rejects that class file version), so this points just the test compiler/runner
-// at a JDK 25 toolchain while Gradle keeps running on whatever JVM launched it.
+// set so the production jar keeps targeting Java 17. Pinning an explicit JDK 25 toolchain here
+// (rather than relying on whatever JVM happens to launch Gradle) keeps this working regardless
+// of a developer's default JDK - Gradle auto-detects/auto-provisions it as needed.
 tasks.named('compileTestJava', JavaCompile) {
     options.release = 25
     javaCompiler = javaToolchains.compilerFor {
@@ -76,6 +79,10 @@ tasks.named('test', Test) {
 shadowJar {
     archiveClassifier.set('')
     archiveFileName.set("${project.name}-${version}.jar")
+    // Several of JDA's transitive kotlin-stdlib jars carry inert *.kotlin_module metadata
+    // (Kotlin-compiler-only, unused by our all-Java code); excluding it sidesteps shadow's
+    // duplicate-handling warning for these instead of merging meaningless duplicates.
+    exclude 'META-INF/*.kotlin_module'
 }
 
 tasks.withType(Jar).configureEach {

@@ -4,10 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-WoolfPostalService (WPS) is a Spigot/Bukkit Minecraft server plugin written in Java 17. It lets
-players designate shulker boxes as "mailboxes" — when a player places or a dispenser ejects a
-shulker box into a monitored location, the plugin posts a notification to a Discord channel via
-the JDA (Java Discord API) library, so WPS "staff" know a package is ready for pickup.
+WoolfPostalService (WPS) is a Spigot/Bukkit Minecraft server plugin written in Java 17, targeting
+Spigot API `26.2`. It lets players designate shulker boxes as "mailboxes" — when a player places
+or a dispenser ejects a shulker box into a monitored location, the plugin posts a notification to
+a Discord channel via the JDA (Java Discord API) library, so WPS "staff" know a package is ready
+for pickup.
+
+Note on versioning: Minecraft/Spigot dropped the "1." version prefix as of the 2026 releases —
+`26.1`, `26.1.1`, `26.2`, etc. are the real version strings (not `1.26.x`). This shows up
+throughout the project: `build.gradle`'s `version`, `plugin.yml`'s `version`/`api-version`, and
+the `spigot-api`/`paper-api` Maven coordinates below.
 
 ## Build
 
@@ -37,7 +43,7 @@ with the Spigot dependency coordinate above — Bukkit enforces the `api-version
 Gradle itself needs to run on a JDK the installed Gradle version supports (8.10 does not run on
 JDK 25 class-file format); `sourceCompatibility`/`targetCompatibility` in `build.gradle` still
 target Java 17 bytecode regardless of which JDK runs the build, so a locally-installed JDK 17
-toolchain is not required.
+toolchain is not required for the *production* source set.
 
 ## Tests
 
@@ -46,13 +52,18 @@ toolchain is not required.
 ./gradlew test --tests "*.PlacementListenerTest"       # one class
 ```
 
-Tests use [MockBukkit](https://github.com/MockBukkit/MockBukkit) (`org.mockbukkit.mockbukkit:mockbukkit-v1.21`)
-against `paper-api` (Paper is a superset of Spigot's API, so it mocks Bukkit types this plugin
-uses fine) plus JUnit 5, all `testImplementation`-only — none of it ships in the plugin jar.
-`compileTestJava` is pinned to `--release 21` separately from the main source set's Java 17
-target, because the current `paper-api`/MockBukkit snapshot's classes require JVM 21+; bump that
-alongside `paperApiVersion`/`mockbukkitVersion` in `build.gradle` if a future snapshot moves the
-floor again.
+Tests use [MockBukkit](https://github.com/MockBukkit/MockBukkit) (`org.mockbukkit.mockbukkit:mockbukkit-v26.1.2`
+as of this writing — MockBukkit doesn't have a `v26.2` branch yet, one version behind the plugin's
+actual `spigot-api` target; bump `mockbukkitArtifact` in `build.gradle` once it does) against
+`paper-api` (Paper is a superset of Spigot's API, so it mocks Bukkit types this plugin uses fine)
+plus JUnit 5, all `testImplementation`-only — none of it ships in the plugin jar.
+
+The current MockBukkit/paper-api snapshot's classes require JVM 25+ to compile and run against,
+newer than what Gradle 8.10 itself can run on (see above) — so `compileTestJava` and the `test`
+task are each pointed at a JDK 25 **toolchain** (`javaCompiler`/`javaLauncher` in `build.gradle`),
+separate from whatever JVM launches Gradle. Gradle auto-detects installed JDKs for this; if none
+is found it'll offer to auto-provision one. Bump the toolchain's `languageVersion` alongside
+`paperApiVersion`/`mockbukkitVersion` if a future snapshot moves the floor again.
 
 WoolfPostalService's own `onEnable()` makes a real, blocking Discord connection via JDA
 (`connectDiscord()`), which tests can't do — there's no bot token in a test environment. All

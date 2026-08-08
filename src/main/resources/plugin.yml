@@ -1,9 +1,9 @@
 name: WoolfPostalService
 description: Provides functionality to set up an in-game postal service
 main: com.asharpminer.wps.WoolfPostalService
-version: 1.21
+version: 26.2
 prefix: "wps"
-api-version: 1.21
+api-version: 26.2
 # softdepend: [ManHunt]
 
 commands:

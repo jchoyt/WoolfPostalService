@@ -4,7 +4,9 @@ plugins {
 }
 
 group = 'com.asharpminer.wps'
-version = '1.21'
+// Minecraft/Spigot dropped the "1." version prefix as of the 2026 releases (26.1, 26.2, ...) -
+// this is genuinely "26.2", not "1.26.2".
+version = '26.2'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -19,10 +21,15 @@ repositories {
 }
 
 // MockBukkit ships as a Paper-API-backed mock server; its own module doesn't pull in paper-api
-// itself, so it must be added alongside it (must be kept in step with the mockbukkit-v1.21
+// itself, so it must be added alongside it (must be kept in step with the mockbukkit-v26.1.2
 // artifact's own "Paper-Version" manifest entry when bumping mockbukkitVersion below).
-def paperApiVersion = '1.21.11-R0.1-SNAPSHOT'
-def mockbukkitVersion = '4.110.0'
+//
+// NOTE: MockBukkit doesn't have a v26.2 branch yet as of this writing, only v26.1.2 - one
+// version behind the plugin's actual spigot-api target below. Bump mockbukkitArtifact to
+// mockbukkit-v26.2 (and paperApiVersion to match) once that branch exists upstream.
+def mockbukkitArtifact = 'mockbukkit-v26.1.2'
+def paperApiVersion = '26.1.2.build.72-stable'
+def mockbukkitVersion = '4.115.0'
 def junitVersion = '6.1.3'
 
 dependencies {
@@ -37,7 +44,7 @@ dependencies {
     }
 
     testImplementation "io.papermc.paper:paper-api:${paperApiVersion}"
-    testImplementation "org.mockbukkit.mockbukkit:mockbukkit-v1.21:${mockbukkitVersion}"
+    testImplementation "org.mockbukkit.mockbukkit:${mockbukkitArtifact}:${mockbukkitVersion}"
     testImplementation platform("org.junit:junit-bom:${junitVersion}")
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -48,10 +55,21 @@ tasks.named('test') {
 }
 
 // Test-only dependencies (MockBukkit / paper-api) target newer bytecode than the plugin itself
-// (Minecraft 1.21.11's server jar requires Java 21+); this bumps only the test source set so the
-// production jar keeps targeting Java 17.
+// (Minecraft's server jar requires Java 25+ as of this release); this bumps only the test source
+// set so the production jar keeps targeting Java 17. Gradle 8.10 itself can't run on JDK 25 (its
+// Groovy runtime rejects that class file version), so this points just the test compiler/runner
+// at a JDK 25 toolchain while Gradle keeps running on whatever JVM launched it.
 tasks.named('compileTestJava', JavaCompile) {
-    options.release = 21
+    options.release = 25
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.named('test', Test) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
 }
 
 // Match the plugin jar naming the old Ant build produced: WoolfPostalService-<version>.jar

@@ -11,28 +11,35 @@ the JDA (Java Discord API) library, so WPS "staff" know a package is ready for p
 
 ## Build
 
-Build is Ant-based, not Maven/Gradle:
+Build is Gradle-based (via the wrapper — no local Gradle install required):
 
 ```
-ant jar          # compiles src/ into build/ and produces WoolfPostalService-<version>.jar
-ant clean        # removes build/, doc/, and the jar
+./gradlew build         # compiles, runs checks, and produces build/libs/WoolfPostalService-<version>.jar
+./gradlew shadowJar     # just the fat jar (plugin classes + JDA bundled, spigot-api excluded)
+./gradlew clean
 ```
 
 There is no automated test suite in this repo.
 
-### Before building, dependencies must be present in `lib/`
+Standard Gradle source layout: Java sources under `src/main/java`, and `plugin.yml`/`config.yml`
+under `src/main/resources` (both get copied verbatim into the jar root, as Spigot requires).
 
-The build does not fetch dependencies. `lib/README.md` documents what's needed:
+Dependencies are declared in `build.gradle`, not vendored in `lib/` anymore:
 
-- `spigot-api-<version>.jar` — obtain by building CraftBukkit/Spigot with BuildTools
-  (https://www.spigotmc.org/wiki/buildtools/): `java -jar BuildTools.jar --rev <minecraft version>`.
-- `JDA-5.1.0-withDependencies-min.jar` — the Discord bot library; `ant jar` zip-groups this whole
-  jar into the plugin's output jar (see `build.xml`'s `zipgroupfileset`), so the shipped plugin jar
-  is self-contained for Discord connectivity.
+- `spigot-api` is `compileOnly` (provided by the server at runtime, not bundled), resolved from
+  Spigot's own Maven snapshot repo (`hub.spigotmc.org`) using coordinates `org.spigotmc:spigot-api:<version>-R0.1-SNAPSHOT`.
+- `JDA` is `implementation`, resolved from Maven Central and bundled into the output jar by the
+  Shadow plugin (`com.github.johnrengelman.shadow`) — this replaces the old `build.xml`
+  `<zipgroupfileset>` step. The `opus-java` (voice/audio) transitive dependency is excluded since
+  WPS only ever sends text notifications.
 
-The plugin `version` (currently 1.21) is hardcoded in both `build.xml` and `plugin.yml` — keep
-them in sync when bumping versions, and match it to the target `api-version` (Minecraft/Spigot
-version) since Bukkit enforces that at load time.
+The project `version` in `build.gradle` must stay in sync with `api-version` in `plugin.yml` and
+with the Spigot dependency coordinate above — Bukkit enforces the `api-version` match at load time.
+
+Gradle itself needs to run on a JDK the installed Gradle version supports (8.10 does not run on
+JDK 25 class-file format); `sourceCompatibility`/`targetCompatibility` in `build.gradle` still
+target Java 17 bytecode regardless of which JDK runs the build, so a locally-installed JDK 17
+toolchain is not required.
 
 ## Architecture
 

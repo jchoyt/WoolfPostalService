@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.asharpminer.wps'
+version = '1.21'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url 'https://oss.sonatype.org/content/groups/public/' }
+}
+
+dependencies {
+    // Provided by the server at runtime - not bundled into the plugin jar.
+    compileOnly "org.spigotmc:spigot-api:${version}-R0.1-SNAPSHOT"
+
+    // Discord bot library - bundled into the plugin jar by shadowJar (mirrors the old
+    // build.xml's <zipgroupfileset> of lib/JDA-*-withDependencies-min.jar). Voice/audio
+    // support is excluded since WPS only ever sends text notifications.
+    implementation('net.dv8tion:JDA:5.1.0') {
+        exclude group: 'club.minnced', module: 'opus-java'
+    }
+}
+
+// Match the plugin jar naming the old Ant build produced: WoolfPostalService-<version>.jar
+shadowJar {
+    archiveClassifier.set('')
+    archiveFileName.set("${project.name}-${version}.jar")
+}
+
+tasks.withType(Jar).configureEach {
+    manifest {
+        attributes(
+            'Built-By': System.getProperty('user.name'),
+            'Built-Date': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        )
+    }
+}
+
+tasks.named('build') {
+    dependsOn shadowJar
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.deprecation = true
+    options.debug = true
+}

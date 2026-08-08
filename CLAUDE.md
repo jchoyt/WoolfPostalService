@@ -19,8 +19,6 @@ Build is Gradle-based (via the wrapper — no local Gradle install required):
 ./gradlew clean
 ```
 
-There is no automated test suite in this repo.
-
 Standard Gradle source layout: Java sources under `src/main/java`, and `plugin.yml`/`config.yml`
 under `src/main/resources` (both get copied verbatim into the jar root, as Spigot requires).
 
@@ -41,6 +39,39 @@ JDK 25 class-file format); `sourceCompatibility`/`targetCompatibility` in `build
 target Java 17 bytecode regardless of which JDK runs the build, so a locally-installed JDK 17
 toolchain is not required.
 
+## Tests
+
+```
+./gradlew test                                        # whole suite
+./gradlew test --tests "*.PlacementListenerTest"       # one class
+```
+
+Tests use [MockBukkit](https://github.com/MockBukkit/MockBukkit) (`org.mockbukkit.mockbukkit:mockbukkit-v1.21`)
+against `paper-api` (Paper is a superset of Spigot's API, so it mocks Bukkit types this plugin
+uses fine) plus JUnit 5, all `testImplementation`-only — none of it ships in the plugin jar.
+`compileTestJava` is pinned to `--release 21` separately from the main source set's Java 17
+target, because the current `paper-api`/MockBukkit snapshot's classes require JVM 21+; bump that
+alongside `paperApiVersion`/`mockbukkitVersion` in `build.gradle` if a future snapshot moves the
+floor again.
+
+WoolfPostalService's own `onEnable()` makes a real, blocking Discord connection via JDA
+(`connectDiscord()`), which tests can't do — there's no bot token in a test environment. All
+tests instead load `TestableWoolfPostalService` (in `src/test/java`, same package so it can
+override package-visible internals), a subclass that no-ops `connectDiscord()` and records
+`notifyMailChannel()` calls into a list instead of logging/sending them, both cheap overrides
+since the two methods are non-`private` seams left for exactly this. This is also why
+`WoolfPostalService` isn't `final` and `onDisable()` null-checks the JDA `bot` field before
+calling `shutdown()` on it.
+
+One MockBukkit gotcha worth knowing: `MockBukkit.load(SomeClass.class)` matches `SomeClass`
+against `plugin.yml`'s `main:` field and silently falls back to a bare, commandless/permissionless
+description if it doesn't match — since `TestableWoolfPostalService` isn't the class named there,
+tests use `MockBukkit.loadWith(TestableWoolfPostalService.class, "plugin.yml")` instead, which
+takes the description file as given. Likewise, `PluginCommand.execute(...)` (used to drive
+`/wpsbox` and `/deletebox` directly in tests) enforces the command's declared `permission:` from
+`plugin.yml` itself, same as real dispatch would — tests grant `wps.mailman` to whichever
+`PlayerMock` should be allowed to run the command via `player.addAttachment(plugin, "wps.mailman", true)`.
+
 ## Architecture
 
 Single package: `com.asharpminer.wps`. Four classes, wired together from the plugin entrypoint:
@@ -52,11 +83,13 @@ Single package: `com.asharpminer.wps`. Four classes, wired together from the plu
     `mailboxes.yml` in the plugin's data folder (not `config.yml`) as `world:x:y:z:nickname`
     strings — see `readMailboxes()`/`saveMailboxes()`. Mailboxes are saved on every mutation and
     again in `onDisable()`.
-  - Owns the JDA Discord bot connection, created in `onEnable()` from `config.yml`'s
-    `discord.token`. It looks up the first guild the bot belongs to, then finds the channel
-    named `discord.server.channel` within it, and stores that as `wpsChannel`. If no guild or
-    channel is found it logs a warning and returns early (note: the bot connection stays open in
-    that case; `disable()` calls are currently commented out).
+  - Owns the JDA Discord bot connection, created in `connectDiscord()` (called once from
+    `onEnable()`) from `config.yml`'s `discord.token`. It looks up the first guild the bot
+    belongs to, then finds the channel named `discord.server.channel` within it, and stores that
+    as `wpsChannel`. If no guild or channel is found it logs a warning and returns early (note:
+    the bot connection stays open in that case; `disable()` calls are currently commented out).
+    `connectDiscord()` is a seam for tests (see Tests below) — it's the only reason the class
+    isn't `final` and the only non-`private` method that isn't part of the plugin's real API.
   - `notifyMailChannel(msg)` is the single choke point for outbound Discord messages. When
     `config.yml`'s `testing: true`, messages are logged instead of sent — check/toggle this when
     working on Discord-facing behavior locally.

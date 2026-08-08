@@ -15,7 +15,15 @@ repositories {
     mavenCentral()
     maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url 'https://oss.sonatype.org/content/groups/public/' }
+    maven { url 'https://repo.papermc.io/repository/maven-public/' } // for paper-api (test fixture, see below)
 }
+
+// MockBukkit ships as a Paper-API-backed mock server; its own module doesn't pull in paper-api
+// itself, so it must be added alongside it (must be kept in step with the mockbukkit-v1.21
+// artifact's own "Paper-Version" manifest entry when bumping mockbukkitVersion below).
+def paperApiVersion = '1.21.11-R0.1-SNAPSHOT'
+def mockbukkitVersion = '4.110.0'
+def junitVersion = '6.1.3'
 
 dependencies {
     // Provided by the server at runtime - not bundled into the plugin jar.
@@ -27,6 +35,23 @@ dependencies {
     implementation('net.dv8tion:JDA:5.1.0') {
         exclude group: 'club.minnced', module: 'opus-java'
     }
+
+    testImplementation "io.papermc.paper:paper-api:${paperApiVersion}"
+    testImplementation "org.mockbukkit.mockbukkit:mockbukkit-v1.21:${mockbukkitVersion}"
+    testImplementation platform("org.junit:junit-bom:${junitVersion}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// Test-only dependencies (MockBukkit / paper-api) target newer bytecode than the plugin itself
+// (Minecraft 1.21.11's server jar requires Java 21+); this bumps only the test source set so the
+// production jar keeps targeting Java 17.
+tasks.named('compileTestJava', JavaCompile) {
+    options.release = 21
 }
 
 // Match the plugin jar naming the old Ant build produced: WoolfPostalService-<version>.jar

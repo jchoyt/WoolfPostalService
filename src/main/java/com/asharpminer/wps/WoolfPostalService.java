@@ -30,7 +30,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 
 
-public final class WoolfPostalService extends JavaPlugin {
+public class WoolfPostalService extends JavaPlugin {
 
     private Logger logger = null;
     private Map<Block, String> mailboxes = new HashMap<Block, String>();
@@ -49,13 +49,22 @@ public final class WoolfPostalService extends JavaPlugin {
         readMailboxes();
         // load up listeners and command executors
         new PlacementListener(this); // listens for package placements
-        new MailboxCommandExecutor(this); 
+        new MailboxCommandExecutor(this);
         new DeleteMailboxCommandExecutor(this);
 
+        connectDiscord();
+    }
+
+    /**
+     * Logs the bot into Discord and locates the channel to post mailbox notifications to. Split
+     * out of onEnable() as a seam: tests override this to skip live Discord connectivity (see
+     * TestableWoolfPostalService in src/test).
+     */
+    protected void connectDiscord() {
         // create bot from JDA framework and set up the wpsChannel
         bot = JDABuilder.createLight(getConfig().getString("discord.token"))
             .build();
-        try { 
+        try {
             bot.awaitReady();
         } catch (InterruptedException e) {
             logger.warning(e.getStackTrace().toString());
@@ -64,7 +73,7 @@ public final class WoolfPostalService extends JavaPlugin {
         //get the server we are on
         List <Guild> guildList = bot.getGuilds(); //ByName(getConfig().getString("discord.server.name"), false);
         logger.fine("I belong to " + guildList.size() + " servers");
-        
+
         if(guildList.size() == 0) {
             logger.warning("Couldn't find a server the bot is part of with the name " + getConfig().getString("discord.server.name"));
             //disable();
@@ -93,8 +102,10 @@ public final class WoolfPostalService extends JavaPlugin {
     public void onDisable() {
         // save config
         saveMailboxes();
-        // log out the bot
-        bot.shutdown();
+        // log out the bot (won't have been connected if connectDiscord() was skipped/overridden)
+        if (bot != null) {
+            bot.shutdown();
+        }
     }
 
     public void setMailbox(String nickname, Block block) {
